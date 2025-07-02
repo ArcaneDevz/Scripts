@@ -8,14 +8,14 @@ script.settings = {
     Sensitivity = 0,
     LockPart = "Head",
     Distance = false,
-    MaxDistance = 200,
+    MaxDistance = 1000,
     Hotkey1 = Enum.UserInputType.MouseButton2,
     Hotkey2 = Enum.KeyCode.E,
     Toggle = false,
     fov = {
         Enabled = false,
         Visible = false,
-        Radius = 0,
+        Radius = 50,
         NumSides = 0,
         Thickness = 1,
         Transparency = 1,
@@ -42,11 +42,6 @@ local wasHotkeyPressed = false
 local fovCircle = nil
 
 RunService.RenderStepped:Connect(function(deltaTime)
-    if typeof(script.settings) ~= "table" then return end
-    if typeof(script.settings.fov) ~= "table" then return end
-    if typeof(script.settings.Enabled) ~= "boolean" then return end
-    if typeof(script.settings.LockPart) ~= "string" then return end
-
     local fovSettings = script.settings.fov
     local screenCenter = camera.ViewportSize / 2
 
@@ -84,14 +79,12 @@ RunService.RenderStepped:Connect(function(deltaTime)
 
     local shouldAim = (script.settings.Toggle and isToggledOn) or (not script.settings.Toggle and isHotkeyPressed)
     local closestTarget = nil
+    local closestDistance = math.huge
 
     if shouldAim then
         local localCharacter = localPlayer.Character
         local localHead = localCharacter and localCharacter:FindFirstChild("Head")
         if not (localCharacter and localHead) then return end
-
-        local minDistance = math.huge
-        local mouseLocation = UserInputService:GetMouseLocation()
 
         for _, player in ipairs(Players:GetPlayers()) do
             if player == localPlayer then continue end
@@ -100,43 +93,32 @@ RunService.RenderStepped:Connect(function(deltaTime)
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             if not (character and humanoid) then continue end
 
-            if script.settings.TeamCheck and player.TeamColor == localPlayer.TeamColor then
-                continue
-            end
-
-            if script.settings.HealthCheck and humanoid.Health <= 0 then
-                continue
-            end
+            if script.settings.TeamCheck and player.TeamColor == localPlayer.TeamColor then continue end
+            if script.settings.HealthCheck and humanoid.Health <= 0 then continue end
 
             local targetPart = character:FindFirstChild(script.settings.LockPart)
             if not targetPart then continue end
 
             if script.settings.Distance and (targetPart.Position - localHead.Position).Magnitude > script.settings.MaxDistance then
-                continue
-            end
+                continue end
 
             if script.settings.VisibleCheck then
                 local rayParams = RaycastParams.new()
                 rayParams.FilterType = Enum.RaycastFilterType.Blacklist
                 rayParams.FilterDescendantsInstances = {localCharacter}
                 local result = Workspace:Raycast(localHead.Position, targetPart.Position - localHead.Position, rayParams)
-                if result and not result.Instance:IsDescendantOf(character) then
-                    continue
-                end
+                if result and not result.Instance:IsDescendantOf(character) then continue end
             end
 
-            local screenPos, onScreen = camera:WorldToScreenPoint(targetPart.Position)
-            if onScreen then
-                local screenVector = Vector2.new(screenPos.X, screenPos.Y)
-                if fovSettings.Enabled and (screenVector - screenCenter).Magnitude > fovSettings.Radius then
-                    continue
-                end
+            local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+            if not onScreen then continue end
 
-                local distance = (screenVector - mouseLocation).Magnitude
-                if distance < minDistance then
-                    minDistance = distance
-                    closestTarget = targetPart
-                end
+            local screenVec = Vector2.new(screenPos.X, screenPos.Y)
+            local distanceFromCenter = (screenVec - screenCenter).Magnitude
+
+            if distanceFromCenter <= fovSettings.Radius and distanceFromCenter < closestDistance then
+                closestDistance = distanceFromCenter
+                closestTarget = targetPart
             end
         end
 
