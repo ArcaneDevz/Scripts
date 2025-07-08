@@ -116,9 +116,16 @@ RunService.RenderStepped:Connect(function(deltaTime)
             local screenVec = Vector2.new(screenPos.X, screenPos.Y)
             local distanceFromCenter = (screenVec - screenCenter).Magnitude
 
-            if distanceFromCenter <= fovSettings.Radius and distanceFromCenter < closestDistance then
-                closestDistance = distanceFromCenter
-                closestTarget = targetPart
+            if fovSettings.Enabled then
+                if distanceFromCenter <= fovSettings.Radius and distanceFromCenter < closestDistance then
+                    closestDistance = distanceFromCenter
+                    closestTarget = targetPart
+                end
+            else
+                if distanceFromCenter < closestDistance then
+                    closestDistance = distanceFromCenter
+                    closestTarget = targetPart
+                end
             end
         end
 
