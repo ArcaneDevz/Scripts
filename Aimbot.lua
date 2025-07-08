@@ -45,7 +45,7 @@ RunService.RenderStepped:Connect(function(deltaTime)
     local fovSettings = script.settings.fov
     local screenCenter = camera.ViewportSize / 2
 
-    if isDrawingAvailable and fovSettings.Enabled then
+    if isDrawingAvailable then
         if not fovCircle then
             fovCircle = Drawing.new("Circle")
         end
@@ -56,9 +56,6 @@ RunService.RenderStepped:Connect(function(deltaTime)
         fovCircle.Transparency = fovSettings.Transparency
         fovCircle.Filled = fovSettings.Filled
         fovCircle.Position = screenCenter
-    elseif fovCircle then
-        fovCircle:Remove()
-        fovCircle = nil
     end
 
     if not script.settings.Enabled then
